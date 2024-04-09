@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from PIL import Image
+from vidstab import VidStab, layer_overlay
 
 # Correction courbe gamma
 g = 1.5    # Facteur de correction gamma, supérieur à 1 pour accentuer les couleurs claires
@@ -18,7 +19,7 @@ class MOR:
         self.video_path = video_path
         self.frame_count = 0
 
-        #Valeurs de l'image finale
+        # Valeurs de l'image finale
         self.image_path = image_path
         self.height = 0
         self.width = 0
@@ -29,6 +30,35 @@ class MOR:
         self.green = None
         self.red = None
 
+
+    # Fonction de stabilisation de la vidéo
+    def Stabilization(self):
+        # Charger la vidéo
+        cap = cv2.VideoCapture(self.video_path)
+
+        # Capturer la première frame
+        ret, frame = cap.read()
+        self.height = frame.shape[0]
+        self.width = frame.shape[1]
+
+        # Compter le nombre de frames
+        while True:
+            if not ret:
+                cap.release()
+                break
+            self.frame_count += 1
+            ret, frame = cap.read()
+        
+        # ["GFTT", "BRISK", "DENSE", "FAST", "HARRIS", "MSER", "ORB", "STAR"]. ["SIFT", "SURF"]
+        stabilizer = VidStab(kp_method='GFTT')
+        stabilizer.stabilize(input_path=self.video_path, 
+                     output_path='stabilized_video.avi', 
+                     border_type='black', 
+                     border_size=50,
+                     smoothing_window=self.frame_count//2,
+                     layer_func=layer_overlay)
+        self.video_path = './stabilized_video.avi'
+        
     # Fonction d'initialisation pour charger la vidéo et initialiser les valeurs
     def Initialisation(self):
         # Charger la vidéo
