@@ -49,13 +49,14 @@ class MOR:
             self.frame_count += 1
             ret, frame = cap.read()
         
-        # ["GFTT", "BRISK", "DENSE", "FAST", "HARRIS", "MSER", "ORB", "STAR"]. ["SIFT", "SURF"]
-        stabilizer = VidStab(kp_method='GFTT')
+        # "BRISK", "DENSE", "FAST"
+        stabilizer = VidStab(kp_method='FAST')
         stabilizer.stabilize(input_path=self.video_path, 
                      output_path='stabilized_video.avi', 
                      border_type='black', 
-                     border_size=50,
+                     border_size='auto',
                      smoothing_window=self.frame_count//2,
+                     max_frames=self.frame_count//2,
                      layer_func=layer_overlay)
         self.video_path = './stabilized_video.avi'
         
@@ -152,7 +153,6 @@ class MOR:
 
         # Enregistrer l'image finale
         cv2.imwrite(self.image_path, image)
-
         print("Image finale enregistrée avec succès !")
 
     def ShowImage(self):
