@@ -15,6 +15,9 @@ darkeningRange = 100
 class MOR:
 
     def __init__(self, video_path, image_path):
+        # Soustraction de fond
+        self.bgSub = []
+
         # Valeurs de la vidéo
         self.video_path = video_path
         self.frame_count = 0
@@ -118,9 +121,29 @@ class MOR:
                     final_image[row, col, 1] /= darkening
                     final_image[row, col, 2] /= darkening"""
 
+    def backgroundSubtraction(self):
+        # Initialiser le soustracteur d'arrière-plan
+        fgbg = cv2.createBackgroundSubtractorMOG2()
+
+        cap = cv2.VideoCapture(self.video_path)
+
+        while True:
+            # Capturer une image depuis la webcam
+            ret, frame = cap.read()
+            if not ret:
+                cap.release()
+                break
+            
+            # Appliquer la soustraction d'arrière-plan
+            fgmask = fgbg.apply(frame)
+            
+            # Ajouter le masque au tableau
+            self.bgSub.append(fgmask)
+
     def Superposition(self):
         # Charger la vidéo
         cap = cv2.VideoCapture(self.video_path)
+        count = 0
 
         # Lire chaque image de la vidéo
         while True:
@@ -130,14 +153,16 @@ class MOR:
                 break
 
             # Completer totaux des canaux de couleur pour chaque position de pixel
-            self.total_blue += frame[:, :, 0]
-            self.total_green += frame[:, :, 1]
-            self.total_red += frame[:, :, 2]
+            self.total_blue += frame[:, :, 0] - self.bgSub[count]
+            self.total_green += frame[:, :, 1] - self.bgSub[count]
+            self.total_red += frame[:, :, 2] - self.bgSub[count]
+
+            count += 1
 
         # Calculer les moyennes des canaux de couleur pour chaque position de pixel
-        avBlue = self.total_blue / self.frame_count
-        avGreen = self.total_green / self.frame_count
-        avRed = self.total_red / self.frame_count
+        avBlue = self.total_blue // self.frame_count
+        avGreen = self.total_green // self.frame_count
+        avRed = self.total_red // self.frame_count
 
         # Normaliser les valeurs des canaux corrigés entre 0 et 255
         self.blue = (avBlue / np.max(avBlue)) * 255
